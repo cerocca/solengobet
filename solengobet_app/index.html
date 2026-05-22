@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#b45309">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SolengoBET">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐗</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐗</text></svg>">
+    
+    <title>SolengoBET 🐗</title>
+    <style>
+        * { box-sizing: border-box; }
+        html, body { max-width: 100vw; overflow-x: hidden; }
+        :root { --primary: #b45309; --admin: #7c3aed; --bg: #f8fafc; --danger: #e11d48; --success: #059669; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; padding-bottom: 40px; -webkit-tap-highlight-color: transparent; }
+        .container { width: 100%; max-width: 950px; margin: 0 auto; display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+        @media (max-width: 850px) { .container { grid-template-columns: 1fr; } }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; width: 100%; word-break: break-word; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 5px; }
+        .admin-section { border: 2px solid var(--admin); background: #fdfaff; }
+        .bet-item { border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; background: #fff; }
+        .nav-tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #e2e8f0; padding: 5px; border-radius: 8px; }
+        .nav-tabs button { background: none; color: #475569; flex: 1; margin: 0; padding: 10px 5px; font-size: 14px; }
+        .nav-tabs button.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .leaderboard-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .leaderboard-table td { padding: 12px 10px; border-bottom: 1px solid #eee; }
+        .winner-tag { background: var(--success); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; display: inline-block; margin-top: 5px; }
+        .app-logo { font-size: 4rem; text-align: center; margin: 0; line-height: 1; }
+        .app-title { color: var(--primary); text-align: center; margin: 5px 0 15px 0; font-weight: 900; letter-spacing: -1px; }
+        .user-mgmt-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; flex-wrap: wrap; gap: 10px; }
+        .user-mgmt-row button { width: auto; padding: 6px 10px; margin: 0; flex: 1; min-width: 45px; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="main-app" style="display:none;">
+    <main>
+        <div class="card" style="text-align: center; padding-bottom: 10px;">
+            <div class="app-logo">🐗</div>
+            <h1 class="app-title">SolengoBET</h1>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid #eee; padding-top: 15px; flex-wrap: wrap; gap: 10px;">
+                <h2 id="user-name-display" style="margin:0; font-size: 1.2rem; text-align:left;"></h2>
+                <button onclick="logout()" style="width:auto; background:var(--danger); padding: 8px 15px; margin:0;">Esci</button>
+            </div>
+            <h1 id="user-credits-display" style="color:var(--success); margin:10px 0;"></h1>
+            
+            <div class="nav-tabs">
+                <button id="tab-active" class="active" onclick="changeTab('active')">Scommesse Attive</button>
+                <button id="tab-archive" onclick="changeTab('archive')">Storico Concluse</button>
+            </div>
+        </div>
+
+        <div id="admin-panel" class="card admin-section" style="display:none;">
+            <h3 style="color:var(--admin); margin-top:0;">🛠️ Pannello Solengo Master</h3>
+            <div id="admin-content"></div>
+        </div>
+
+        <div id="bets-list"></div>
+
+        <div class="card">
+            <h3>💡 Proponi Nuova Scommessa</h3>
+            <input type="text" id="p-title" placeholder="Cosa succederà in ufficio?">
+            <input type="text" id="p-opts" placeholder="Opzioni (es: Si, No, Forse)">
+            <input type="datetime-local" id="p-date">
+            <button onclick="sendProposal()" style="background:var(--success)">Invia Proposta</button>
+        </div>
+    </main>
+
+    <aside>
+        <div class="card">
+            <h3>🏆 Classifica Ghiande</h3>
+            <table class="leaderboard-table" id="rank-table"><tbody></tbody></table>
+        </div>
+    </aside>
+</div>
+
+<div id="login-box" class="card" style="max-width:350px; margin: 80px auto; text-align:center;">
+    <div class="app-logo" style="font-size: 5rem;">🐗</div>
+    <h1 class="app-title">SolengoBET</h1>
+    
+    <div id="login-form-div">
+        <p style="color: #64748b; margin-bottom: 20px;">L'azzardo ignorante da ufficio.</p>
+        <input type="text" id="login-u" placeholder="Username (es: mrossi)" autocapitalize="none">
+        <input type="password" id="login-p" placeholder="PIN">
+        <button onclick="doLogin()">Entra nel Branco</button>
+        <p style="margin-top: 15px; font-size: 0.9em;">
+            <a href="#" onclick="toggleLoginReq(true)" style="color: var(--primary); text-decoration: none; font-weight: bold;">Sei nuovo? Richiedi Accesso 🌰</a>
+        </p>
+    </div>
+
+    <div id="req-form-div" style="display: none;">
+        <p style="color: #64748b; margin-bottom: 20px;">Inserisci i tuoi dati per richiedere l'accesso al Solengo Master.</p>
+        <input type="text" id="req-u" placeholder="Username desiderato (es: lverdi)" autocapitalize="none">
+        <input type="text" id="req-name" placeholder="Nome e Cognome (es: Luca Verdi)">
+        <button onclick="sendAccessRequest()" style="background:var(--success)">Invia Richiesta</button>
+        <p style="margin-top: 15px; font-size: 0.9em;">
+            <a href="#" onclick="toggleLoginReq(false)" style="color: #64748b; text-decoration: none;">Torna al Login</a>
+        </p>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, get, update, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    // IMPORTIAMO IL MODULO PER LE NOTIFICHE PUSH
+    import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
+
+    // ⚠️ INSERISCI QUI I DATI DEL TUO NUOVO PROGETTO FIREBASE ⚠️
+    const firebaseConfig = {
+		apiKey: "AIzaSyDT3u6tDam0JGP1G4iUThm8_7Xq_0jIITc",
+		authDomain: "solengobet.firebaseapp.com",
+		databaseURL: "https://solengobet-default-rtdb.europe-west1.firebasedatabase.app",
+		projectId: "solengobet",
+		storageBucket: "solengobet.firebasestorage.app",
+		messagingSenderId: "749860636242",
+		appId: "1:749860636242:web:019c602f6ed8c02bc1418b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const messaging = getMessaging(app); // Inizializza il sistema di notifiche
+
+    let user = null;
+    let currentTab = 'active';
+
+    // --- FUNZIONE PER RICHIEDERE IL PERMESSO E SALVARE IL TOKEN ---
+    async function requestPushPermission() {
+        try {
+            console.log("Richiesta permessi notifica...");
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                // ⚠️ INSERISCI QUI LA TUA CHIAVE VAPID ⚠️
+                const currentToken = await getToken(messaging, { vapidKey: 'BO7haU80RwPcbN4ETZTFuUHkN04x0O4V9tBcv9v2NGbAnRlSJfaRCpNocl1wh_f56A5OHkbxp4wCmBPR6vElvso' });
+                
+                if (currentToken) {
+                    // Salva il token nel profilo dell'utente
+                    const up = {};
+                    up[`users/${user.id}/fcm_tokens/${currentToken}`] = true;
+                    await update(ref(db), up);
+                    console.log("Token registrato con successo nel branco!");
+                }
+            } else {
+                console.log("Permesso negato per le notifiche.");
+            }
+        } catch (err) {
+            console.error("Errore nel recupero del token:", err);
+        }
+    }
+
+    window.doLogin = async (savedU, savedP) => {
+        const u = savedU || document.getElementById('login-u').value.trim();
+        const p = savedP || document.getElementById('login-p').value.trim();
+        const snap = await get(ref(db, `users/${u}`));
+        if (snap.exists() && snap.val().pin === p) {
+            user = { ...snap.val(), id: u };
+            localStorage.setItem('solengo_u', u);
+            localStorage.setItem('solengo_p', p);
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('main-app').style.display = 'grid';
+            initData();
+            
+            // Subito dopo il login, chiedi il permesso per le notifiche!
+            requestPushPermission();
+        } else {
+            if(!savedU) alert("PIN o Username errati! Non sei del branco.");
+            else window.logout();
+        }
+    };
+
+    window.logout = () => {
+        localStorage.removeItem('solengo_u');
+        localStorage.removeItem('solengo_p');
+        location.reload();
+    };
+
+    window.toggleLoginReq = (showReq) => {
+        document.getElementById('login-form-div').style.display = showReq ? 'none' : 'block';
+        document.getElementById('req-form-div').style.display = showReq ? 'block' : 'none';
+    };
+
+    window.changeTab = (t) => {
+        currentTab = t;
+        document.getElementById('tab-active').className = t === 'active' ? 'active' : '';
+        document.getElementById('tab-archive').className = t === 'archive' ? 'active' : '';
+        get(ref(db)).then(snap => render(snap.val() || {}));
+    };
+
+    function initData() {
+        onValue(ref(db), (snap) => {
+            const data = snap.val() || {};
+            render(data);
+        });
+    }
+
+    function render(data) {
+        const users = data.users || {};
+        const bets = data.bets || {};
+        const archive = data.archive || {};
+        const history = data.history || {};
+        const pending = data.pending_bets || {};
+        const pendingUsers = data.pending_users || {};
+
+        document.getElementById('user-name-display').innerText = `Ciao, ${user.name}`;
+        if(users[user.id]) {
+            document.getElementById('user-credits-display').innerText = `🌰 ${users[user.id].credits} ghiande`;
+        }
+
+        const lb = document.querySelector('#rank-table tbody');
+        lb.innerHTML = Object.values(users).sort((a,b) => (b.winnings || 0) - (a.winnings || 0))
+            .map(u => `<tr><td>${u.name}</td><td><b>${u.winnings || 0} 🌰</b></td></tr>`).join('');
+
+        const list = document.getElementById('bets-list');
+        list.innerHTML = ``;
+        const source = currentTab === 'active' ? bets : archive;
+
+        if (Object.keys(source).length === 0) {
+            list.innerHTML = `<div class="card" style="text-align:center; color:#64748b;">Nessuna scommessa presente in questa sezione.</div>`;
+        }
+
+        for (let bid in source) {
+            const b = source[bid];
+            const betHistory = history[bid] || {};
+            let total = 0;
+            let pools = {};
+            b.options.forEach(o => { pools[o] = 0; });
+            Object.values(betHistory).forEach(p => { total += p.amount; pools[p.option] += p.amount; });
+
+            let html = `<div class="bet-item">
+                <small>${new Date(b.deadline).toLocaleString()}</small>
+                <h4 style="margin:5px 0;">${b.title} ${b.result ? `<span class="winner-tag">Vinto: ${b.result}</span>` : ''}</h4>
+                <p style="margin:5px 0 15px 0;">Totale Giocato: <b>${total}</b> 🌰</p>`;
+
+            b.options.forEach(o => {
+                const q = pools[o] > 0 ? (total / pools[o]).toFixed(2) : (b.baseQuote || 2.0).toFixed(2);
+                html += `<div style="margin-bottom: 5px;">• ${o}: <b>x${q}</b> ${user.role==='admin' ? `<small>(${pools[o]})</small>` : ''}</div>`;
+            });
+
+            if (currentTab === 'active') {
+                const myP = betHistory[user.id];
+                if (myP) {
+                    const isLock = (new Date(b.deadline) - Date.now()) < 86400000;
+                    html += `<p style="color:var(--primary); margin-top:15px; font-weight:bold;">Hai puntato ${myP.amount} 🌰 su: ${myP.option}</p>`;
+                    if(!isLock) html += `<div style="display:flex; gap:5px;"><input type="number" id="up-${bid}" placeholder="Aumenta puntata a..."><button onclick="bet('${bid}','${myP.option}',true)">Rialza</button></div>`;
+                } else {
+                    html += `<div style="display:flex; gap:5px; margin-top:15px">
+                        <input type="number" id="in-${bid}" placeholder="Quante ghiande?">
+                        <select id="sel-${bid}">${b.options.map(o=>`<option>${o}</option>`)}</select>
+                        <button onclick="bet('${bid}',null,false)">Punta</button></div>`;
+                }
+            }
+            list.innerHTML += html + `</div>`;
+        }
+
+        if (user.role === 'admin') {
+            document.getElementById('admin-panel').style.display = 'block';
+            let admHtml = "";
+
+            admHtml += `<strong>👥 Gestione Branco (Utenti)</strong>
+            <div style="display:flex; gap:5px; margin-top:5px; flex-wrap:wrap;">
+                <input type="text" id="new-u-id" placeholder="ID (es: lverdi)" autocapitalize="none" style="flex:1; min-width:80px;">
+                <input type="text" id="new-u-name" placeholder="Nome" style="flex:1; min-width:80px;">
+                <input type="text" id="new-u-pin" placeholder="PIN" style="flex:1; min-width:60px;">
+                <button onclick="addUser()" style="background:var(--admin); width:100%;">Crea Cinghiale</button>
+            </div>
+            <div style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 5px; margin: 10px 0; background: #fff; border-radius: 6px;">`;
+            
+            for(let uid in users) {
+                admHtml += `<div class="user-mgmt-row">
+                    <span style="flex: 1; min-width: 150px;">
+                        ${users[uid].name} <i>(${uid})</i><br>
+                        <small>PIN: <b>${users[uid].pin}</b> | Capitale: <b>${users[uid].credits}</b> 🌰 | Vincite: <b>${users[uid].winnings || 0}</b> 🌰</small>
+                    </span>
+                    <div style="display:flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+                        <button onclick="modCredits('${uid}', -10)" style="background:var(--danger); padding:8px;" title="Rimuovi 10 ghiande">-10</button>
+                        <button onclick="modCredits('${uid}', 10)" style="background:var(--success); padding:8px;" title="Aggiungi 10 ghiande">+10</button>
+                        <button onclick="editUser('${uid}', '${users[uid].name}', '${users[uid].pin}')" style="background:#0284c7; padding:8px;" title="Modifica Nome/PIN">✏️</button>
+                        <button onclick="deleteUser('${uid}')" style="background:var(--danger); padding:8px;" title="Caccia dal branco">🗑️</button>
+                    </div>
+                </div>`;
+            }
+            admHtml += `</div><hr>`;
+
+            admHtml += `<strong>📋 Richieste di Accesso Pendenti:</strong>`;
+            if (Object.keys(pendingUsers).length === 0) {
+                admHtml += `<div style="color:#64748b; font-size:0.9em; margin:5px 0;">Nessuna richiesta pendente.</div>`;
+            } else {
+                for(let uid in pendingUsers) {
+                    admHtml += `<div class="user-mgmt-row" style="margin:10px 0; background:#f0fdf4; padding:8px; border-radius:6px;">
+                        <span><b>${pendingUsers[uid].name}</b> <i>(${uid})</i></span>
+                        <div style="display:flex; gap:4px;">
+                            <button onclick="approveUserRequest('${uid}', '${pendingUsers[uid].name}')" style="background:var(--success); padding:6px 12px;">Sì</button>
+                            <button onclick="rejectUserRequest('${uid}')" style="background:var(--danger); padding:6px 12px;">No</button>
+                        </div>
+                    </div>`;
+                }
+            }
+            admHtml += `<hr>`;
+
+            admHtml += "<strong>⏳ Da Approvare:</strong>";
+            for(let p in pending) {
+                // IL TASTO APPROVA ORA CHIAMA LA NUOVA FUNZIONE
+                admHtml += `<div style="margin-bottom:10px;">${pending[p].title} <button onclick="approveWithNotification('${p}', '${pending[p].title.replace(/'/g, "\\'")}')">Approva e Notifica</button></div>`;
+            }
+            
+            admHtml += `<hr><strong>🎲 Gestione Scommesse:</strong>`;
+            if (currentTab === 'active') {
+                for(let bid in bets) {
+                    admHtml += `<div style="margin-bottom:10px; border-bottom:1px dashed #ccc; padding-bottom:10px;">${bets[bid].title} 
+                        <select id="win-${bid}" style="margin:5px 0;">${bets[bid].options.map(o=>`<option>${o}</option>`)}</select>
+                        <button style="background:var(--success)" onclick="settle('${bid}')">Paga Vincitori e Archivia</button></div>`;
+                }
+            } else {
+                for(let bid in archive) {
+                    admHtml += `<div style="margin-bottom:10px; border-bottom:1px dashed #ccc; padding-bottom:10px;">
+                        <strong>${archive[bid].title}</strong>
+                        <div style="display:flex; gap: 5px; margin-top:5px; flex-wrap: wrap;">
+                            <button onclick="reopen('${bid}')" style="background:#f59e0b; flex:1;">Riapri</button>
+                            <button onclick="deleteArchive('${bid}')" style="background:var(--danger); flex:1;">Elimina</button>
+                        </div>
+                    </div>`;
+                }
+            }
+
+            document.getElementById('admin-content').innerHTML = admHtml;
+        }
+    }
+
+    // --- FUNZIONI ADMIN AGGIUNTIVE ---
+    window.addUser = async () => {
+        const id = document.getElementById('new-u-id').value.trim().toLowerCase();
+        const name = document.getElementById('new-u-name').value.trim();
+        const pin = document.getElementById('new-u-pin').value.trim();
+        if(!id || !name || !pin) return alert("Compila tutti i campi utente!");
+        
+        const snap = await get(ref(db, `users/${id}`));
+        if(snap.exists()) return alert("Username già esistente!");
+
+        await set(ref(db, `users/${id}`), { name, pin, credits: 100, winnings: 0, role: 'user' });
+        alert("Nuovo cinghiale aggiunto al branco!");
+        document.getElementById('new-u-id').value = '';
+        document.getElementById('new-u-name').value = '';
+        document.getElementById('new-u-pin').value = '';
+    };
+
+    window.modCredits = async (uid, diff) => {
+        const snap = await get(ref(db, `users/${uid}/credits`));
+        const current = snap.val() || 0;
+        await update(ref(db, `users/${uid}`), { credits: current + diff });
+    };
+
+    window.editUser = async (uid, currentName, currentPin) => {
+        const newName = prompt("Inserisci il nuovo NOME (lascia vuoto per non cambiare):", currentName);
+        if (newName === null) return;
+
+        const newPin = prompt("Inserisci il nuovo PIN (lascia vuoto per non cambiare):", currentPin);
+        if (newPin === null) return;
+        
+        const finalName = newName.trim() || currentName;
+        const finalPin = newPin.trim() || currentPin;
+        
+        await update(ref(db, `users/${uid}`), { name: finalName, pin: finalPin });
+        alert(`Dati di ${finalName} aggiornati con successo!`);
+    };
+
+    window.deleteUser = async (uid) => {
+        if (uid === user.id) return alert("Non puoi cacciare te stesso dal branco mentre sei loggato!");
+        const conferma = confirm(`⚠️ ATTENZIONE: Sei sicuro di voler eliminare l'utente "${uid}"? L'azione è irreversibile.`);
+        if (!conferma) return;
+
+        const up = {};
+        up[`users/${uid}`] = null;
+        await update(ref(db), up);
+        alert("Cinghiale abbattuto (utente eliminato)!");
+    };
+
+    window.deleteArchive = async (bid) => {
+        const conferma = confirm("🔥 ATTENZIONE: Stai per eliminare per sempre questa scommessa e tutto il suo storico puntate. Procedere?");
+        if (!conferma) return;
+
+        const up = {};
+        up[`archive/${bid}`] = null;
+        up[`history/${bid}`] = null;
+        await update(ref(db), up);
+        alert("Scommessa incenerita con successo!");
+    };
+
+    window.sendAccessRequest = async () => {
+        const u = document.getElementById('req-u').value.trim().toLowerCase();
+        const name = document.getElementById('req-name').value.trim();
+        if(!u || !name) return alert("Compila tutti i campi della richiesta!");
+
+        const snapUser = await get(ref(db, `users/${u}`));
+        if(snapUser.exists()) return alert("Questo Username è già registrato nel branco!");
+
+        await set(ref(db, `pending_users/${u}`), { name: name });
+        alert("Richiesta inviata correttamente! Chiedi al Solengo Master di approvarti.");
+        
+        document.getElementById('req-u').value = '';
+        document.getElementById('req-name').value = '';
+        toggleLoginReq(false);
+    };
+
+    window.approveUserRequest = async (uid, name) => {
+        const generatedPin = Math.floor(1000 + Math.random() * 9000).toString();
+        const up = {};
+        up[`users/${uid}`] = { name: name, pin: generatedPin, credits: 100, winnings: 0, role: 'user' };
+        up[`pending_users/${uid}`] = null;
+        await update(ref(db), up);
+        alert(`🎉 Utente ${name} (@${uid}) approvato con successo!\n\n⚠️ COMUNICA QUESTO PIN AL COLLEGA PER L'ACCESSO: ${generatedPin}`);
+    };
+
+    window.rejectUserRequest = async (uid) => {
+        if(!confirm(`Sei sicuro di voler rifiutare la richiesta di @${uid}?`)) return;
+        const up = {};
+        up[`pending_users/${uid}`] = null;
+        await update(ref(db), up);
+        alert("Richiesta rimossa.");
+    };
+
+    window.bet = async (bid, opt, edit) => {
+        const val = parseInt(document.getElementById(edit ? `up-${bid}` : `in-${bid}`).value);
+        const sel = edit ? opt : document.getElementById(`sel-${bid}`).value;
+        const snap = await get(ref(db));
+        const d = snap.val();
+        const old = edit ? d.history[bid][user.id].amount : 0;
+        if (isNaN(val) || val <= old || d.users[user.id].credits < (val - old)) return alert("Controlla le ghiande disponibili o l'importo!");
+        
+        const up = {};
+        up[`users/${user.id}/credits`] = d.users[user.id].credits - (val - old);
+        up[`history/${bid}/${user.id}`] = { amount: val, option: sel };
+        await update(ref(db), up);
+    };
+
+    window.settle = async (bid) => {
+        const winOpt = document.getElementById(`win-${bid}`).value;
+        const snap = await get(ref(db));
+        const d = snap.val();
+        const b = d.bets[bid];
+        const hist = d.history ? d.history[bid] || {} : {};
+        
+        let tot = 0; let winPool = 0;
+        Object.values(hist).forEach(p => { tot += p.amount; if(p.option === winOpt) winPool += p.amount; });
+        const quota = winPool > 0 ? (tot / winPool) : 0;
+
+        const up = {};
+        if (quota > 0) {
+            for(let uid in hist) {
+                if(hist[uid].option === winOpt) {
+                    const vinto = Math.floor(hist[uid].amount * quota);
+                    up[`users/${uid}/credits`] = d.users[uid].credits + vinto;
+                    up[`users/${uid}/winnings`] = (d.users[uid].winnings || 0) + vinto;
+                }
+            }
+        }
+        up[`archive/${bid}`] = { ...b, result: winOpt, finalQuota: quota };
+        up[`bets/${bid}`] = null;
+        await update(ref(db), up);
+        alert("Pagamenti effettuati, ghiande distribuite e scommessa chiusa!");
+    };
+
+    window.reopen = async (bid) => {
+        if(!confirm("Attenzione: questo annullerà la chiusura ma NON ritirerà le ghiande già pagate. Procedere?")) return;
+        const snap = await get(ref(db, `archive/${bid}`));
+        const b = snap.val();
+        const up = {};
+        up[`bets/${bid}`] = { ...b, result: null, finalQuota: null };
+        up[`archive/${bid}`] = null;
+        await update(ref(db), up);
+    };
+
+    // --- LA NUOVA FUNZIONE PER APPROVARE LE SCOMMESSE (Chiama Netlify) ---
+    window.approveWithNotification = async (bid, title) => {
+        if(!confirm(`Stai per approvare la scommessa e inviare una notifica a tutti. Procedere?`)) return;
+        
+        try {
+            // Chiamata API alla nostra Netlify Function (che faremo nel passaggio 3)
+            const response = await fetch('/.netlify/functions/send-notification', {
+                method: 'POST',
+                body: JSON.stringify({ bid: bid, title: title })
+            });
+            
+            if(response.ok) {
+                alert("✅ Scommessa approvata e notifiche in volo verso il branco!");
+            } else {
+                // Fallback di sicurezza: se la Netlify Function fallisce o non è pronta, 
+                // approva comunque la scommessa in modo manuale nel database.
+                console.warn("Netlify Function non riuscita. Approvo manualmente senza notifica.");
+                const snap = await get(ref(db, `pending_bets/${bid}`));
+                const up = {};
+                up[`bets/${bid}`] = { ...snap.val(), status: 'open' };
+                up[`pending_bets/${bid}`] = null;
+                await update(ref(db), up);
+                alert("Scommessa approvata (Notifiche Push disabilitate o in errore).");
+            }
+        } catch(e) {
+            console.error("Errore di rete:", e);
+            alert("Errore di rete durante l'invio delle notifiche.");
+        }
+    };
+
+    window.sendProposal = async () => {
+        const title = document.getElementById('p-title').value;
+        const options = document.getElementById('p-opts').value.split(',').map(s=>s.trim());
+        const deadline = document.getElementById('p-date').value;
+        if(!title || options.length < 2 || !deadline) return alert("Compila tutti i campi!");
+        await set(ref(db, 'pending_bets/' + Date.now()), { title, options, deadline, proposer: user.name });
+        alert("Proposta inviata al Solengo Master!");
+        document.getElementById('p-title').value = "";
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const savedU = localStorage.getItem('solengo_u');
+        const savedP = localStorage.getItem('solengo_p');
+        if (savedU && savedP) {
+            window.doLogin(savedU, savedP);
+        }
+    });
+</script>
+</body>
+</html>
