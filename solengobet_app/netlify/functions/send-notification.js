@@ -33,13 +33,14 @@ exports.handler = async (event) => {
         }
 
         // 3. Spara la notifica Push!
-        if (tokens.length > 0) {
+        const uniqueTokens = [...new Set(tokens)]; // <-- IL FILTRO MAGICO ANTI-DOPPIONI
+        if (uniqueTokens.length > 0) {
             await admin.messaging().sendEachForMulticast({
                 notification: {
                     title: '🐗 Nuova Scommessa!',
                     body: `Il Solengo Master ha aperto: "${title}". Corri a puntare!`
                 },
-                tokens: tokens
+                tokens: uniqueTokens // <-- ORA USA SOLO LE TARGHE UNICHE
             });
         }
 
