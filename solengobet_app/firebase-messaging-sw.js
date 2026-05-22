@@ -15,11 +15,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-    console.log('Notifica in background: ', payload);
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
-        body: payload.notification.body,
-        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🐗</text></svg>'
-    };
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    console.log('Notifica in background ricevuta: ', payload);
+    // Lasciamo che sia Firebase a mostrare la notifica in automatico!
+    // Rimosso il comando manuale self.registration.showNotification per evitare il doppione.
 });
