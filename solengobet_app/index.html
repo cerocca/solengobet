@@ -303,8 +303,11 @@
 
             admHtml += "<strong>⏳ Da Approvare:</strong>";
             for(let p in pending) {
-                // IL TASTO APPROVA ORA CHIAMA LA NUOVA FUNZIONE
-                admHtml += `<div style="margin-bottom:10px;">${pending[p].title} <button onclick="approveWithNotification('${p}', '${pending[p].title.replace(/'/g, "\\'")}')">Approva e Notifica</button></div>`;
+                // 1. Puliamo il titolo da "a capo" e virgolette che mandano in crash il browser
+                const safeTitle = pending[p].title.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/(\r\n|\n|\r)/gm, " ");
+                
+                // 2. Creiamo il pulsante in totale sicurezza
+                admHtml += `<div style="margin-bottom:10px;">${pending[p].title} <button onclick="approveWithNotification('${p}', '${safeTitle}')">Approva e Notifica</button></div>`;
             }
             
             admHtml += `<hr><strong>🎲 Gestione Scommesse:</strong>`;
