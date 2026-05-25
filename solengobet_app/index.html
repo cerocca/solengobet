@@ -152,7 +152,7 @@
         }
     }
 
-    window.doLogin = async (savedU, savedP) => {
+    window.doLogin = async (savedU, savedP, isAutoLogin = false) => {
         const u = savedU || document.getElementById('login-u').value.trim();
         const p = savedP || document.getElementById('login-p').value.trim();
         const snap = await get(ref(db, `users/${u}`));
@@ -164,8 +164,10 @@
             document.getElementById('main-app').style.display = 'grid';
             initData();
             
-            // Subito dopo il login, chiedi il permesso per le notifiche!
-            requestPushPermission();
+// Chiedi il permesso SOLO se è un click manuale, o se l'utente aveva già detto "Consenti" in passato
+            if (!isAutoLogin || Notification.permission === 'granted') {
+                requestPushPermission();
+            }
         } else {
             if(!savedU) alert("PIN o Username errati! Non sei del branco.");
             else window.logout();
@@ -516,13 +518,13 @@
         document.getElementById('p-title').value = "";
     };
 
-    document.addEventListener("DOMContentLoaded", () => {
+	document.addEventListener("DOMContentLoaded", () => {
         const savedU = localStorage.getItem('solengo_u');
         const savedP = localStorage.getItem('solengo_p');
         if (savedU && savedP) {
-            window.doLogin(savedU, savedP);
+            window.doLogin(savedU, savedP, true); // <-- Aggiunto 'true' per dire che è un auto-login
         }
-    });
+    });	
 </script>
 </body>
 </html>
